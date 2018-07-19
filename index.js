@@ -6,6 +6,14 @@ const port = process.env.port || 45000;
 
 app.use(express.json())
 
+
+const postPutSchema = {
+    name: Joi.string().min(1).required()
+}
+const getSchema = {
+    query: Joi.string().regex(/^(id|name)$/).required()
+}
+
 const courses = [
   { id: 1, name: 'course1' },
   { id: 2, name: 'course2' },
@@ -20,34 +28,28 @@ app.get('/courses', (req, res) => {
   res.send(courses);
 });
 
+// this does not make any sense in an real world app, because if you would click an element
+// in the gui, always the id would be taken to find an element in the server, but yeah.. it`s 
+// a playground ;)
 app.get('/courses/:selector', (req, res) => {
-  if (!req.query.hasOwnProperty('query')) res.status(404).send('A query must be given');
-  if (req.query.query === 'name') {
-    const course = courses.find(v => v.name === req.params.selector);
-    if (!course) res.status(404).send(`Course ${req.params.selector} not found`);
-    res.send(course);
-  }
-  else if (req.query.query === 'id') {
-    const course = courses.find(v => v.id === parseInt(req.params.selector));
-    if (!course) res.status(404).send(`Course ${req.params.selector} not found`);
+    const {error} = Joi.validate(req.query, getSchema) // same as result.error
+    if (error) validationError(res, error)
+    
+    if (req.query.query === 'name') {
+        const course = courses.find(v => v.name === req.params.selector)
+        if (!course) courseNotFound(res, req.params.selector)
+        res.send(course);
+    }
+    const course = courseById(req.params.selector)
+    if (!course) courseNotFound(res, req.params.selector)
     res.send(course);    
-  }
-  else res.status(404).send('Invalid params...')
-});
+
+})
 
 app.post('/courses', (req, res) => {
-    /*
-    -- let`s use 'joi' instead of this approach
-    if (!req.body.name || req.body.name.length == 0) {
-        res.status(400).send('Name is mandatory')
-        return
-    }
-    */
-    const result = Joi.validate(req.body, schema)
-    if (result.error) {
-        res.status(400).send(result.error.details[0].message)
-        return
-    }
+    const {error} = Joi.validate(req.body, postPutSchema)
+    if (error) validationError(res, error)
+
     const course = {
         id: courses.length + 1,
         name: req.body.name
@@ -56,8 +58,26 @@ app.post('/courses', (req, res) => {
     res.send(course)
 })
 
-app.listen(port, () => console.log(`listening on port.. ${port} `));
+app.put('/courses/:id', (req, res) => {
+    const course = courseById(parseInt(req.params.id))
+    if (!course) courseNotFound(res, req.params.id)
+    const {error} = Joi.validate(req.body, postPutSchema)
+    if (error) validationError(res, error)
 
-const schema = {
-    name: Joi.string().min(1).required()
+    course.name = req.body.name
+    res.send(course)
+})
+
+function validationError(res, error) {
+    res.status(400).send(error.details[0].message);
 }
+
+function courseById(id) {
+    return courses.find(v => v.id === parseInt(id));
+}
+
+function courseNotFound(res, selector) {
+    res.status(404).send(`Course ${selector} not found`);
+}
+
+app.listen(port, () => console.log(`listening on port.. ${port} `));
