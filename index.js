@@ -1,14 +1,21 @@
 const Joi = require('joi')
 const logger = require('./logger')
+const morgan = require('morgan')
 const express = require('express');
 const app = express();
 const port = process.env.port || 45000;
 
-// custom middleware
-// they are called in sequence and should be in index.js or app.js or so on :)
+/*
+ middleware section
+ they are called in sequence and should be in index.js or app.js or so on :)
+ but be aware... middleware will slow down processing requests
+*/
 app.use(express.json())
 app.use(logger)
 app.use(express.static('public'))
+
+// only use morgen logging if NODE_ENV is undefined or set to development
+if (app.get('env') === 'development') app.use(morgan('dev'))
 
 const postPutSchema = {
     name: Joi.string().min(1).required()
