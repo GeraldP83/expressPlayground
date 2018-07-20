@@ -14,18 +14,27 @@ const getSchema = {
     query: Joi.string().regex(/^(id|name)$/).required()
 }
 
-const courses = [
-  { id: 1, name: 'course1' },
-  { id: 2, name: 'course2' },
-  { id: 3, name: 'course3' }
+let courses = [{
+        id: 1,
+        name: 'course1'
+    },
+    {
+        id: 2,
+        name: 'course2'
+    },
+    {
+        id: 3,
+        name: 'course3'
+    }
 ];
 
 app.get('/', (req, res) => {
-  res.send('Hallo Gerald');
+    res.send(`Express Playground! Possible routes: /courses
+    /courses/(id|name)?query=(id|name) `);
 });
 
 app.get('/courses', (req, res) => {
-  res.send(courses);
+    res.send(courses);
 });
 
 // this does not make any sense in an real world app, because if you would click an element
@@ -33,22 +42,21 @@ app.get('/courses', (req, res) => {
 // a playground ;)
 app.get('/courses/:selector', (req, res) => {
     const {error} = Joi.validate(req.query, getSchema) // same as result.error
-    if (error) validationError(res, error)
+    if (error) return validationError(res, error)
     
     if (req.query.query === 'name') {
         const course = courses.find(v => v.name === req.params.selector)
-        if (!course) courseNotFound(res, req.params.selector)
+        if (!course) return courseNotFound(res, req.params.selector)
         res.send(course);
     }
     const course = courseById(req.params.selector)
-    if (!course) courseNotFound(res, req.params.selector)
-    res.send(course);    
-
+    if (!course) return courseNotFound(res, req.params.selector)
+    res.send(course);
 })
 
 app.post('/courses', (req, res) => {
     const {error} = Joi.validate(req.body, postPutSchema)
-    if (error) validationError(res, error)
+    if (error) return validationError(res, error)
 
     const course = {
         id: courses.length + 1,
@@ -60,12 +68,21 @@ app.post('/courses', (req, res) => {
 
 app.put('/courses/:id', (req, res) => {
     const course = courseById(parseInt(req.params.id))
-    if (!course) courseNotFound(res, req.params.id)
+    if (!course) return courseNotFound(res, req.params.id)
     const {error} = Joi.validate(req.body, postPutSchema)
-    if (error) validationError(res, error)
+    if (error) return validationError(res, error)
 
     course.name = req.body.name
     res.send(course)
+})
+
+app.delete('/courses/:id', (req, res) => {
+    const course = courseById(req.params.id)
+    if (!course) return courseNotFound(res, req.params.id)
+    // find the index of the given element and use splice instead of filter?
+    // then courses could be const 
+    courses = courses.filter( c => c.id !== parseInt(req.params.id))
+    res.send(courses)
 })
 
 function validationError(res, error) {
