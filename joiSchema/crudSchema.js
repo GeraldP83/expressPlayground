@@ -1,4 +1,5 @@
 const Joi = require('joi')
+
 const crudSchema = {
     "cuSchema": {
         name: Joi.string().min(1).required()    

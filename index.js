@@ -2,7 +2,6 @@
 const debug = require('debug')('app:debug')
 const courseRouter = require('./routes/courses')
 const homeRouter = require('./routes/home')
-const morgan = require('morgan')
 const express = require('express');
 const app = express();
 const port = process.env.port || 45000;
@@ -19,9 +18,5 @@ app.use(express.static('public'))
 app.use(express.json())
 app.use('/courses', courseRouter)
 app.use('/', homeRouter)
-
-// only use morgen logging if NODE_ENV is undefined or set to development
-if (app.get('env') === 'development') app.use(morgan('common'))
-
 
 app.listen(port, () => debug(`listening on port.. ${port} `));

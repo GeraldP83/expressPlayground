@@ -21,7 +21,7 @@ let courses = [{
 
 
 
-router.get('/', (req, res) => {
+router.get('/', (_, res) => {
     routeDebugger(`Courses: ${JSON.stringify(courses)}`)
     res.send(courses);
 });
