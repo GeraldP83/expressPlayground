@@ -1,17 +1,21 @@
+// set an DEBUG=app:debug env var, DEBUG=app:*  or DEBUG= to disable 
+const devDebugger = require('debug')('app:debug')
+const routeDebugger = require('debug')('app:routeDebug')
 const Joi = require('joi')
-const logger = require('./logger')
 const morgan = require('morgan')
 const express = require('express');
 const app = express();
 const port = process.env.port || 45000;
 
+
 /*
  middleware section
  they are called in sequence and should be in index.js or app.js or so on :)
+ custom middleware functions must call next() at the end to pass the res 
+ to the next layer in the pipeline.
  but be aware... middleware will slow down processing requests
 */
 app.use(express.json())
-app.use(logger)
 app.use(express.static('public'))
 
 // only use morgen logging if NODE_ENV is undefined or set to development
@@ -44,6 +48,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/courses', (req, res) => {
+    routeDebugger(`Courses: ${JSON.stringify(courses)}`)
     res.send(courses);
 });
 
@@ -51,6 +56,7 @@ app.get('/courses', (req, res) => {
 // in the gui, always the id would be taken to find an element in the server, but yeah.. it`s 
 // a playground ;)
 app.get('/courses/:selector', (req, res) => {
+    routeDebugger(`Query: ${JSON.stringify(req.query)} \nParams: ${JSON.stringify(req.params)}`)
     const {error} = Joi.validate(req.query, getSchema) // same as result.error
     if (error) return validationError(res, error)
     
@@ -107,4 +113,4 @@ function courseNotFound(res, selector) {
     res.status(404).send(`Course ${selector} not found`);
 }
 
-app.listen(port, () => console.log(`listening on port.. ${port} `));
+app.listen(port, () => devDebugger(`listening on port.. ${port} `));
