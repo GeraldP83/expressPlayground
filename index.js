@@ -1,11 +1,14 @@
 const Joi = require('joi')
-
+const logger = require('./logger')
 const express = require('express');
 const app = express();
 const port = process.env.port || 45000;
 
+// custom middleware
+// they are called in sequence and should be in index.js or app.js or so on :)
 app.use(express.json())
-
+app.use(logger)
+app.use(express.static('public'))
 
 const postPutSchema = {
     name: Joi.string().min(1).required()
@@ -47,7 +50,7 @@ app.get('/courses/:selector', (req, res) => {
     if (req.query.query === 'name') {
         const course = courses.find(v => v.name === req.params.selector)
         if (!course) return courseNotFound(res, req.params.selector)
-        res.send(course);
+        return res.send(course);
     }
     const course = courseById(req.params.selector)
     if (!course) return courseNotFound(res, req.params.selector)
